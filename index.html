@@ -3,7 +3,7 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <title>海侨汇通个人开户表</title>
+  <title>海侨汇通个人客户注册表</title>
   <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <style>
     body {
@@ -48,38 +48,39 @@
   <p style="text-align:center;color:#666;">请填写信息，生成正式开户表</p>
 
   <form id="webForm">
+    <!-- 表单字段保持不变 -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
       <div class="form-group">
         <label>Surname (姓) *</label>
-        <input type="text" id="surname" required value="SMITH" />
+        <input type="text" id="surname" required />
       </div>
       <div class="form-group">
         <label>Given Name (名) *</label>
-        <input type="text" id="givenName" required value="JOHN" />
+        <input type="text" id="givenName" required />
       </div>
 
       <div class="form-group">
         <label>Date of Birth (出生日期) *</label>
-        <input type="date" id="dob" required value="1985-03-15" />
+        <input type="date" id="dob" required />
       </div>
       <div></div>
 
       <div class="form-group">
         <label>Residential Address (家庭住址) *</label>
-        <input type="text" id="address" required value="123 George Street" />
+        <input type="text" id="address" required />
       </div>
       <div class="form-group">
         <label>Suburb (区) *</label>
-        <input type="text" id="suburb" required value="SYDNEY" />
+        <input type="text" id="suburb" required />
       </div>
 
       <div class="form-group">
         <label>State (州) *</label>
-        <input type="text" id="state" required value="NSW" />
+        <input type="text" id="state" required />
       </div>
       <div class="form-group">
         <label>Postcode (邮编) *</label>
-        <input type="text" id="postcode" required value="2000" />
+        <input type="text" id="postcode" required />
       </div>
 
       <div class="form-group">
@@ -88,28 +89,28 @@
       </div>
       <div class="form-group">
         <label>Mobile (手机) *</label>
-        <input type="text" id="mobile" required value="+61 412 345 678" />
+        <input type="text" id="mobile" required />
       </div>
 
       <div class="form-group">
         <label>Home/Biz No. (家庭/工作电话) *</label>
-        <input type="text" id="phone" required value="(02) 9876 5432" />
+        <input type="text" id="phone" required />
       </div>
       <div class="form-group">
         <label>Email (电子邮件) *</label>
-        <input type="email" id="email" required value="john.smith@example.com" />
+        <input type="email" id="email" required />
       </div>
 
       <div class="form-group">
         <label>Occupation (职业) *</label>
-        <input type="text" id="occupation" required value="Software Engineer" />
+        <input type="text" id="occupation" required />
       </div>
       <div class="form-group">
         <label>Contact App (通讯软件)</label>
         <select id="contactApp">
           <option value="">请选择</option>
           <option value="WeChat">WeChat</option>
-          <option value="WhatsApp" selected>WhatsApp</option>
+          <option value="WhatsApp">WhatsApp</option>
           <option value="Telegram">Telegram</option>
           <option value="Other">其他</option>
         </select>
@@ -117,7 +118,7 @@
 
       <div class="form-group">
         <label>Account No. (账户号)</label>
-        <input type="text" id="accountNo" value="@john_smith_au" />
+        <input type="text" id="accountNo" />
       </div>
     </div>
 
@@ -127,7 +128,11 @@
   <script>
     const { PDFDocument, rgb } = PDFLib;
 
-    // 从您填写的 PDF 中提取的精确坐标（Y 已转换为 pdf-lib 的左下角坐标系）
+    // <<< 关键修正：增加全局偏移量 >>>
+    const OFFSET_X = 2;   // 向右微调
+    const OFFSET_Y = -8;  // 向下移动 8pt，使文字下沉到输入框内
+
+    // 字段坐标来自您填写的“黄金样本”，已校准
     const FIELDS = [
       { key: 'surname', x: 105, y: 710 },
       { key: 'surname', x: 255, y: 710 },
@@ -186,17 +191,16 @@
         const page = pdfDoc.getPages()[0];
 
         const fontSize = 10;
-        const textColor = rgb(0, 0, 0); // 黑色
+        const textColor = rgb(0, 0, 0);
 
         for (const field of FIELDS) {
           const value = data[field.key];
           if (value) {
             page.drawText(value, {
-              x: field.x,
-              y: page.getHeight() - field.y - fontSize * 0.8, // 调整垂直对齐
+              x: field.x + OFFSET_X,
+              y: page.getHeight() - field.y + OFFSET_Y,  // <<< 精确控制 baseline 对齐
               size: fontSize,
-              color: textColor,
-              font: undefined // 使用原 PDF 默认字体
+              color: textColor
             });
           }
         }
