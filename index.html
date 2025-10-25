@@ -1,6 +1,232 @@
 
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <title>海侨汇通个人客户注册表</title>
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <style>
+    body {
+      font-family: 'Microsoft YaHei', Arial, sans-serif;
+      background-color: #f9f9fb;
+      padding: 40px;
+      color: #333;
+      max-width: 800px;
+      margin: auto;
+    }
+    h1 { text-align: center; color: #1a5dbb; }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #1a5dbb;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      display: block;
+      margin: 30px auto;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>海侨汇通个人客户注册表</h1>
+  <p style="text-align:center;color:#666;">请填写信息，生成正式开户表</p>
+
+  <form id="webForm">
+    <!-- 表单字段保持不变 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+      <div class="form-group">
+        <label>Surname (姓) *</label>
+        <input type="text" id="surname" required />
+      </div>
+      <div class="form-group">
+        <label>Given Name (名) *</label>
+        <input type="text" id="givenName" required />
+      </div>
+
+      <div class="form-group">
+        <label>Date of Birth (出生日期) *</label>
+        <input type="date" id="dob" required />
+      </div>
+      <div></div>
+
+      <div class="form-group">
+        <label>Residential Address (家庭住址) *</label>
+        <input type="text" id="address" required />
+      </div>
+      <div class="form-group">
+        <label>Suburb (区) *</label>
+        <input type="text" id="suburb" required />
+      </div>
+
+      <div class="form-group">
+        <label>State (州) *</label>
+        <input type="text" id="state" required />
+      </div>
+      <div class="form-group">
+        <label>Postcode (邮编) *</label>
+        <input type="text" id="postcode" required />
+      </div>
+
+      <div class="form-group">
+        <label>Country (国家)</label>
+        <input type="text" id="country" value="Australia" required />
+      </div>
+      <div class="form-group">
+        <label>Mobile (手机) *</label>
+        <input type="text" id="mobile" required />
+      </div>
+
+      <div class="form-group">
+        <label>Home/Biz No. (家庭/工作电话) *</label>
+        <input type="text" id="phone" required />
+      </div>
+      <div class="form-group">
+        <label>Email (电子邮件) *</label>
+        <input type="email" id="email" required />
+      </div>
+
+      <div class="form-group">
+        <label>Occupation (职业) *</label>
+        <input type="text" id="occupation" required />
+      </div>
+      <div class="form-group">
+        <label>Contact App (通讯软件)</label>
+        <select id="contactApp">
+          <option value="">请选择</option>
+          <option value="WeChat">WeChat</option>
+          <option value="WhatsApp">WhatsApp</option>
+          <option value="Telegram">Telegram</option>
+          <option value="Other">其他</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Account No. (账户号)</label>
+        <input type="text" id="accountNo" />
+      </div>
+    </div>
+
+    <button type="button" id="generatePdf">生成PDF</button>
+  </form>
+
+  <script>
+    const { PDFDocument, rgb } = PDFLib;
+
+    // <<< 关键修正：增加全局偏移量 >>>
+    const OFFSET_X = 2;   // 向右微调
+    const OFFSET_Y = -8;  // 向下移动 8pt，使文字下沉到输入框内
+
+    // 字段坐标来自您填写的“黄金样本”，已校准
+    const FIELDS = [
+      { key: 'surname', x: 105, y: 710 },
+      { key: 'surname', x: 255, y: 710 },
+      { key: 'givenName', x: 415, y: 710 },
+      { key: 'dob', x: 105, y: 672 },
+      { key: 'dob', x: 255, y: 672 },
+      { key: 'address', x: 105, y: 634 },
+      { key: 'address', x: 255, y: 634 },
+      { key: 'address', x: 415, y: 634 },
+      { key: 'suburb', x: 105, y: 596 },
+      { key: 'state', x: 255, y: 596 },
+      { key: 'state', x: 415, y: 596 },
+      { key: 'postcode', x: 105, y: 558 },
+      { key: 'country', x: 255, y: 558 },
+      { key: 'country', x: 415, y: 558 },
+      { key: 'mobile', x: 105, y: 520 },
+      { key: 'phone', x: 255, y: 520 },
+      { key: 'phone', x: 415, y: 520 },
+      { key: 'email', x: 105, y: 482 },
+      { key: 'occupation', x: 255, y: 482 },
+      { key: 'occupation', x: 415, y: 482 },
+      { key: 'contactApp', x: 105, y: 444 },
+      { key: 'accountNo', x: 255, y: 444 },
+      { key: 'accountNo', x: 415, y: 444 }
+    ];
+
+    document.getElementById("generatePdf").addEventListener("click", async () => {
+      const data = {
+        surname: document.getElementById("surname").value.trim(),
+        givenName: document.getElementById("givenName").value.trim(),
+        dob: formatDate(document.getElementById("dob").value),
+        address: document.getElementById("address").value.trim(),
+        suburb: document.getElementById("suburb").value.trim(),
+        state: document.getElementById("state").value.trim(),
+        postcode: document.getElementById("postcode").value.trim(),
+        country: document.getElementById("country").value.trim(),
+        mobile: document.getElementById("mobile").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        occupation: document.getElementById("occupation").value.trim(),
+        contactApp: document.getElementById("contactApp").value || "",
+        accountNo: document.getElementById("accountNo").value.trim(),
+      };
+
+      for (let [key, value] of Object.entries(data)) {
+        if (!value && ['contactApp', 'accountNo'].indexOf(key) === -1) {
+          alert(`请填写：${key}`);
+          return;
+        }
+      }
+
+      try {
+        const url = 'template.pdf';
+        const pdfBytes = await fetch(url).then(res => res.arrayBuffer());
+        const pdfDoc = await PDFDocument.load(pdfBytes);
+        const page = pdfDoc.getPages()[0];
+
+        const fontSize = 10;
+        const textColor = rgb(0, 0, 0);
+
+        for (const field of FIELDS) {
+          const value = data[field.key];
+          if (value) {
+            page.drawText(value, {
+              x: field.x + OFFSET_X,
+              y: page.getHeight() - field.y + OFFSET_Y,  // <<< 精确控制 baseline 对齐
+              size: fontSize,
+              color: textColor
+            });
+          }
+        }
+
+        const pdfBytesOut = await pdfDoc.save();
+        const blob = new Blob([pdfBytesOut], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `个人开户表格-${new Date().toISOString().split('T')[0]}.pdf`;
+        link.click();
+
+      } catch (error) {
+        console.error("PDF生成失败:", error);
+        if (error.message.includes("fetch")) {
+          alert("未找到 template.pdf 文件，请确保它与本页面在同一目录下。");
+        } else {
+          alert("生成失败：" + error.message);
+        }
+      }
+    });
+
+    function formatDate(dateStr) {
+      if (!dateStr) return "";
+      const d = new Date(dateStr);
+      return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
     }
   </script>
 </body>
 </html>
-
